@@ -1,6 +1,11 @@
 #ifndef SPECTRAL_H
 #define SPECTRAL_H
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 typedef struct TransformInfo {
     float acc_cos, acc_sin;
     unsigned int phase;
@@ -12,5 +17,9 @@ typedef struct TransformInfo {
 void initialize_response(TransformInfo *info, unsigned int size);
 void spectral_response_batch(float *data, unsigned int frequency, unsigned int batch_size, TransformInfo *info);
 void spectral_response(float datum, unsigned int frequency, TransformInfo *info);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
