@@ -6,6 +6,9 @@
 #include <TPad.h>
 #include <TCanvas.h>
 #include <TGraphErrors.h>
+#include <TLegend.h>
+#include <TLatex.h>
+#include <TAxis.h>
 
 #include "spectral.h"
 
@@ -89,30 +92,46 @@ int main(int argc, char **argv) {
 
     TApplication theApp("the_app", &argc, argv);
     TCanvas *canvas = new TCanvas("the_canvas", "the_canvas", 800, 600);
+    TLegend *legend = new TLegend(0.6, 0.3, 0.95, 0.95, "ENERGY / 150ms");
     TGraphErrors *graph_energy[AudioChannels][frequencies], *g;
+    char text_string[128];
 
     int color_index = 0, style_index = 0;
     for (int k = 0; k < frequencies; ++k) {
         graph_energy[AudioChannelL][k] = new TGraphErrors(frame_index, time_axis, audio_energy[AudioChannelL][k]);
         graph_energy[AudioChannelR][k] = new TGraphErrors(frame_index, time_axis, audio_energy[AudioChannelR][k]);
+
         g = graph_energy[AudioChannelL][k];
         g->SetLineColor(graph_colors[color_index]);
         color_index = (color_index + 1) % MaxGraphColors;
         g->SetLineStyle(graph_styles[style_index]);
         style_index = (style_index + 1) % MaxGraphStyles;
         g->SetLineWidth(3);
+        snprintf(text_string, sizeof(text_string), "%dHz", transform_info[AudioChannelL][k].frequency);
+        legend->AddEntry(g, text_string, "LPF");
+
         g = graph_energy[AudioChannelR][k];
         g->SetLineColor(graph_colors[color_index]);
         color_index = (color_index + 1) % MaxGraphColors;
         g->SetLineStyle(graph_styles[style_index]);
         style_index = (style_index + 1) % MaxGraphStyles;
-        if (k == 0) { graph_energy[AudioChannelL][k]->Draw("ALP"); }
+        if (k == 0) {
+            g = graph_energy[AudioChannelL][k];
+            g->SetTitle("Spectral Analysis");
+            g->GetXaxis()->SetTitle("x [150ms]");
+            g->GetYaxis()->SetTitle("Energy[ergs]");
+            g->Draw("ALP");
+            legend->Draw();
+        }
         graph_energy[AudioChannelL][k]->Draw("LP");
         graph_energy[AudioChannelR][k]->Draw("LP");
+        canvas->Draw();
+        canvas->Update();
+        canvas->WaitPrimitive();
     }
-    canvas->Draw();
-    canvas->Update();
-    canvas->WaitPrimitive();
+//    canvas->Draw();
+//    canvas->Update();
+//    canvas->WaitPrimitive();
 
     printf("%d samples read. %d frames\n", sample_index, frame_index);
     sf_close(sndfile);
