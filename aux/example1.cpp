@@ -53,7 +53,8 @@ int main(int argc, char **argv) {
         transform_info[AudioChannelR][k].frequency = (k + 1) * 1000; /* override */
     }
     while ((read_count = sf_readf_float(sndfile, data, analysis_frame_size)) == analysis_frame_size) {
-        unsigned int analysis_index = sample_index; /* snapshot of where we are */
+        unsigned int analysis_index = (frame_index >= 2) ? (frame_index - 2) * analysis_frame_size : 0; /* snapshot of where we are */
+        unsigned int analysis_size = (frame_index >= 2) ? (3 * analysis_frame_size) : analysis_frame_size;
         for (int k = 0; k < analysis_frame_size; ++k, ++sample_index) { /* buffer samples into large holding tank */
             if (sample_index >= MaxSamples) {
                 printf("insufficient space for samples allocated. using %d/%d\n", sample_index, MaxSamples);
@@ -66,13 +67,13 @@ int main(int argc, char **argv) {
             info = &transform_info[AudioChannelL][k]; /* left channel */
             info->acc_cos = info->acc_sin = 0; /* clear accumulators for this time slot */
             p_data = &audio_data[AudioChannelL][analysis_index];
-            spectral_response_batch(p_data, analysis_frame_size, info);
+            spectral_response_batch(p_data, analysis_size, info);
             audio_energy[AudioChannelL][k][frame_index] = info->acc_sin * info->acc_sin + info->acc_cos * info->acc_cos;
 
             info = &transform_info[AudioChannelR][k]; /* right channel */
             info->acc_cos = info->acc_sin = 0; /* clear accumulators for this time slot */
             p_data = &audio_data[AudioChannelR][analysis_index];
-            spectral_response_batch(p_data, analysis_frame_size, info);
+            spectral_response_batch(p_data, analysis_size, info);
             audio_energy[AudioChannelL][k][frame_index] = info->acc_sin * info->acc_sin + info->acc_cos * info->acc_cos;
         }
 
