@@ -31,19 +31,16 @@ int main(int argc, char **argv) {
         printf("error opening file [%s]\n", ifile);
         return 1;
     }
-    unsigned int read_count, sample_index = 0;
-    float *data = new float[sfinfo.channels * analysis_frame_size];
+    unsigned int read_count, sample_index = 0, frame_index;
+    float *p_data, *data = new float[sfinfo.channels * analysis_frame_size];
     TransformInfo transform_info[AudioChannels][frequencies], master_transform_info;
-    initialize_response(&master_transform_info, sfinfo.samplerate);
+    initialize_response(&master_transform_info, 1000, sfinfo.samplerate);
     for (int k = 0; k < frequencies; ++k) {
         copy_response(&transform_info[AudioChannelL][k], &master_transform_info);
         copy_response(&transform_info[AudioChannelR][k], &master_transform_info);
-        transform_info[AudioChannelL][k].frequency = (k + 1) * 1000;
-        transform_info[AudioChannelR][k].frequency = (k + 1) * 1000;
+        transform_info[AudioChannelL][k].frequency = (k + 1) * 1000; /* override */
+        transform_info[AudioChannelR][k].frequency = (k + 1) * 1000; /* override */
     }
-    copy_response(&transform_info[1], &transform_info[0]);
-    copy_response(&transform_info[2], &transform_info[0]);
-    copy_response(&transform_info[3], &transform_info[0]);
     while ((read_count = sf_readf_float(sndfile, data, analysis_frame_size)) == analysis_frame_size) {
         unsigned int analysis_index = sample_index; /* snapshot of where we are */
         for (int k = 0; k < analysis_frame_size; ++k, ++sample_index) {
@@ -51,14 +48,12 @@ int main(int argc, char **argv) {
             audio_data[AudioChannelR][sample_index] = data[2 * k];
         }
         for (int k = 0; k < 4; ++k) {
-            float *ptr = &audio_data[AudioChannelL][analysis_index];
-            spectral_response_batch(ptr, frequency[0], analysis_frame_size, &transform_info[0]);
-            ptr = &audio_data[AudioChannelR][analysis_index];
-            spectral_response_batch(ptr, frequency[0], analysis_frame_size, &transform_info[0]);
+            p_data = &audio_data[AudioChannelL][analysis_index];
+            spectral_response_batch(p_data, analysis_frame_size, &transform_info[AudioChannelL][k]);
+            p_data = &audio_data[AudioChannelR][analysis_index];
+            spectral_response_batch(p_data, analysis_frame_size, &transform_info[AudioChannelR][k]);
         }
-        printf("%10f ", data[0]);
-        ++sample_index;
-        if ((sample_index & 15) == 15) { printf("\n"); }
+        if ((++frame_index & 15) == 15) { printf("\n"); }
     }
     printf("%d samples read\n", sample_index);
     sf_close(sndfile);

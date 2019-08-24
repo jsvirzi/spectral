@@ -23,21 +23,26 @@ void make_sin_lut(unsigned int size, TransformInfo *info)
     }
 }
 
-void initialize_response(TransformInfo *info, unsigned int size)
+void initialize_response(TransformInfo *info, unsigned int frequency, unsigned int size)
 {
     bzero(info, sizeof(TransformInfo));
-    if (size) { make_sin_lut(size, info); }
+    make_sin_lut(size, info);
+    info->frequency = frequency;
+    info->cos_phase = 3 * size / 4;
 }
 
 void copy_response(TransformInfo *dst, TransformInfo *src) {
     bzero(dst, sizeof(TransformInfo));
+    dst->frequency = src->frequency;
+    dst->cos_phase = src->cos_phase;
     dst->sin_lut = src->sin_lut;
     dst->sin_lut_size = src->sin_lut_size;
     dst->sin_lut_mask = src->sin_lut_mask;
 }
 
-void spectral_response_batch(float *data, unsigned int frequency, unsigned int batch_size, TransformInfo *info)
+void spectral_response_batch(float *data, unsigned int batch_size, TransformInfo *info)
 {
+    unsigned int frequency = info->frequency;
     unsigned int mask = info->sin_lut_mask;
     if (mask) {
         unsigned int s_phase = info->phase;
@@ -80,20 +85,20 @@ void spectral_response_batch(float *data, unsigned int frequency, unsigned int b
     }
 }
 
-void spectral_response(float datum, unsigned int frequency, TransformInfo *info)
+void spectral_response(float datum, TransformInfo *info)
 {
     if (info->sin_lut_mask) {
         float coeff = info->sin_lut[info->phase];
         info->acc_sin += datum * coeff;
         coeff = info->sin_lut[(info->phase + info->cos_phase) & info->sin_lut_mask];
         info->acc_cos += datum * coeff;
-        info->phase = (info->phase + frequency) & info->sin_lut_mask;
+        info->phase = (info->phase + info->frequency) & info->sin_lut_mask;
     } else {
         float coeff = info->sin_lut[info->phase];
         info->acc_sin += datum * coeff;
         int phase = MOD(info->phase + info->cos_phase, info->sin_lut_size);
         coeff = info->sin_lut[phase];
         info->acc_cos += datum * coeff;
-        info->phase = MOD(info->phase + frequency, info->sin_lut_size);
+        info->phase = MOD(info->phase + info->frequency, info->sin_lut_size);
     }
 }

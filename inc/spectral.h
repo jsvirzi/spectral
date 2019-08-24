@@ -16,9 +16,9 @@ typedef struct TransformInfo {
     unsigned int sin_lut_size;
 } TransformInfo;
 
-void initialize_response(TransformInfo *info, unsigned int size);
-void spectral_response_batch(float *data, unsigned int frequency, unsigned int batch_size, TransformInfo *info);
-void spectral_response(float datum, unsigned int frequency, TransformInfo *info);
+void initialize_response(TransformInfo *info, unsigned int frequency, unsigned int size);
+void spectral_response_batch(float *data, unsigned int batch_size, TransformInfo *info);
+void spectral_response(float datum, TransformInfo *info);
 void copy_response(TransformInfo *dst, TransformInfo *src);
 
 #ifdef __cplusplus

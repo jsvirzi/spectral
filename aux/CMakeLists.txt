@@ -8,7 +8,7 @@ include_directories(../inc)
 include_directories(/usr/local/include)
 
 add_executable(example1 example1.cpp)
-# add_link_options(-L../lib -lspectral)
+# target_link_options(example1 -Wl,-rpath=/home/jsvirzi/projects/spectral/lib)
 target_link_libraries(example1 -L/home/jsvirzi/projects/spectral/lib -lspectral)
 # target_link_libraries(example1 ../lib/libspectral.so)
 target_link_libraries(example1 -L/usr/local/lib -lsndfile)
